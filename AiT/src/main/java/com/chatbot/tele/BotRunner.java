@@ -1,7 +1,6 @@
 package com.chatbot.tele;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import com.pengrad.telegrambot.UpdatesListener;
@@ -10,26 +9,26 @@ import com.pengrad.telegrambot.UpdatesListener;
 public class BotRunner implements CommandLineRunner {
 
     private final TelegramService telegramService;
-    private final AudioMessageHandler audioMessageHandler;
+    private final MediaMessageHandler mediaMessageHandler;
 
     @Autowired
-    public BotRunner(TelegramService telegramService, AudioMessageHandler audioMessageHandler) {
+    public BotRunner(TelegramService telegramService, MediaMessageHandler mediaMessageHandler) {
         this.telegramService = telegramService;
-        this.audioMessageHandler = audioMessageHandler;
+        this.mediaMessageHandler = mediaMessageHandler;
     }
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args) {
         telegramService.getBot().setUpdatesListener(updates -> {
             updates.forEach(update -> {
-                if (update.message() != null) {
+                if (update.message() != null && update.message().chat() != null) {
                     long chatId = update.message().chat().id();
                     if (update.message().voice() != null) {
-                        String fileId = update.message().voice().fileId();
-                        audioMessageHandler.handleAudio(fileId, chatId);
+                        mediaMessageHandler.handleMedia(update.message().voice().fileId(), chatId, "audio");
                     } else if (update.message().audio() != null) {
-                        String fileId = update.message().audio().fileId();
-                        audioMessageHandler.handleAudio(fileId, chatId);
+                        mediaMessageHandler.handleMedia(update.message().audio().fileId(), chatId, "audio");
+                    } else if (update.message().video() != null) {
+                        mediaMessageHandler.handleMedia(update.message().video().fileId(), chatId, "video");
                     }
                 }
             });
